@@ -1,0 +1,9 @@
+http://www.cs.cmu.edu/~epxing/Class/10701-10s/Lecture/lecture5.pdf
+http://scikit-learn.org/stable/modules/generated/sklearn.tree.DecisionTreeClassifier.html
+https://classroom.udacity.com/nanodegrees/nd002/parts/0021345409/project#
+http://machinelearningmastery.com/automate-machine-learning-workflows-pipelines-python-scikit-learn/
+https://en.wikipedia.org/wiki/Precision_and_recall
+http://scikit-learn.org/stable/modules/cross_validation.html#stratified-shuffle-split
+
+
+I hereby confirm that this submission is my work. I have cited above the origins of any parts of the submission that were taken from Websites, books, forums, blog posts, github repositories, etc.
