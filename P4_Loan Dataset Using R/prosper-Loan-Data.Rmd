@@ -1,0 +1,837 @@
+Propser Loan Dataset by Goh Jun Yi
+========================================================
+## Explore and Summarize Data
+
+### Introduction
+
+Prosper is a peer to peer lending company that offers personal loans at low rates. These loans are unsecured, which means you do not have to put up any collateral (like a house or car) that could get taken away if you can't make payments. Each loan is typically funded by multiple people all over the United States. [LendingMemo]
+
+The reason for analysing this dataset is because I have the interest in finding out how different variables affect the interest rates. As a young graduate out of university and looking to build a family next time, it is also better for me to investigate deeper into this subject so that at the same time I can also gain personal finance knowledge. 
+
+I would also like a challenge for an intermediate dataset so that it pushes me to learn more about data analysis and gain experience from it.
+
+```{r global_options, include=FALSE}
+knitr::opts_chunk$set(echo=FALSE, warning=FALSE, message=FALSE)
+```
+
+```{r echo=FALSE, message=FALSE, warning=FALSE, packages}
+# Load all of the packages that you end up using
+# in your analysis in this code chunk.
+
+# Notice that the parameter "echo" was set to FALSE for this code chunk.
+# This prevents the code from displaying in the knitted HTML output.
+# You should set echo=FALSE for all code chunks in your file.
+
+library(ggplot2)
+library(dplyr)
+library(RColorBrewer)
+library(GGally)
+library(gridExtra)
+library(wesanderson)
+
+```
+
+```{r echo=FALSE, message=FALSE, warning=FALSE, Load_the_Data}
+# Load the Data
+
+df<-read.csv('prosperLoanData.csv', sep = ',')
+
+
+## Selected Variables
+loandf<-subset(df, select=c("LoanOriginationDate", "Term", "BorrowerRate",
+                            "ProsperScore","DebtToIncomeRatio",
+                            "EmploymentStatusDuration", 
+                            "TotalCreditLinespast7years",
+                            "DelinquenciesLast7Years", "IncomeRange",
+                            "ProsperPrincipalOutstanding", 
+                            "LoanOriginalAmount", "MonthlyLoanPayment",
+                            "LoanStatus", "Recommendations", 
+                            "EmploymentStatus", "IsBorrowerHomeowner", 
+                            "IncomeVerifiable","EstimatedEffectiveYield",
+                            "LenderYield"))
+
+```
+
+```{r echo=FALSE, Engineering_Variables}
+# Engineering Variables
+
+loandf$BorrowerRate<- loandf$BorrowerRate*100
+loandf$EstimatedEffectiveYield<- loandf$EstimatedEffectiveYield*100
+loandf$LenderYield<- loandf$LenderYield*100
+
+
+#Creating New Column for Date
+
+loandf$LoanOriginationDate <- as.POSIXct(strptime(loandf$LoanOriginationDate, 
+                                                  '%Y-%m-%d %H:%M:%S')) 
+loandf$LoanOriginationDate <- format(loandf$LoanOriginationDate, format="%Y-%m")
+loandf$LoanOriginationyear <- as.numeric(lapply(strsplit(as.character(loandf$LoanOriginationDate), "\\-"), "[", 1))
+loandf$LoanOriginationmonth <- as.numeric(lapply(strsplit(as.character(loandf$LoanOriginationDate), "\\-"), "[", 2))
+
+loandf$ProsperScore[loandf$ProsperScore==11 ] <- 10
+
+loandf$EmploymentStatus<-as.character(loandf$EmploymentStatus)
+loandf$EmploymentStatus[loandf$EmploymentStatus=="" ] <- "Other"
+loandf$EmploymentStatus[loandf$EmploymentStatus=="Not available" ] <- "Other"
+loandf$EmploymentStatus <- as.factor(loandf$EmploymentStatus)
+
+loandf$IncomeRange = factor(loandf$IncomeRange,c("Not displayed",
+                                                 "Not employed","$0",
+                                                 "$1-24,999",
+                                                 "$25,000-49,999",
+                                                 "$50,000-74,999",
+                                                 "$75,000-99,999",
+                                                 "$100,000+"))
+
+loandf$LoanStatus<-as.character(loandf$LoanStatus)
+loandf$LoanStatus[loandf$LoanStatus=="Past Due (1-15 days)" ] <- "Delayed"
+loandf$LoanStatus[loandf$LoanStatus=="Past Due (16-30 days)" ] <- "Delayed"
+loandf$LoanStatus[loandf$LoanStatus=="Past Due (31-60 days)" ] <- "Delayed"
+loandf$LoanStatus[loandf$LoanStatus=="Past Due (61-90 days)" ] <- "Delayed"
+loandf$LoanStatus[loandf$LoanStatus=="Past Due (91-120 days)" ] <- "Delayed"
+loandf$LoanStatus[loandf$LoanStatus=="Past Due (>120 days)" ] <- "Delayed"
+loandf$LoanStatus <- as.factor(loandf$LoanStatus)
+
+loandf$DifferenceInRate <- loandf$BorrowerRate-loandf$EstimatedEffectiveYield
+
+```
+
+# Univariate Plots Section
+```{r echo=FALSE, Univariate_Plots1a}
+
+#### Univariate Plots are done initiallly to just explore the data and to see what adjustments or information can be found.
+
+##  1a. Loan Origination Date
+###  Loan Origination Year
+
+ggplot(aes(x = LoanOriginationyear), data = loandf) + 
+  geom_bar()+
+  xlab("Loan Origination year")+
+  labs(title = "Loan Origination year")+
+  scale_x_continuous(breaks = 2005:2014)
+summary(loandf$LoanOriginationyear)
+```
+
+For LoanOriginationyear, it can be seen that there is a general increasing amount of loans as the years past. This is a good sign for the Prosper business model.
+
+```{r echo=FALSE, Univariate_Plots1b}
+###1b  Loan Origination Month
+
+ggplot(aes(x = LoanOriginationmonth), data = loandf) + 
+  geom_histogram(binwidth = 1)+
+  xlab("Loan Origination month")+
+  labs(title = "Loan Origination month")+
+  scale_x_continuous(breaks = 1:12)
+
+
+summary(loandf$LoanOriginationmonth)
+```
+
+For LoanOriginationmonth, there is no obvious trend going on for the LoanOriginationmonth except for the dip in the month of April. However, not enough information can be seen in this plot.
+
+```{r echo=FALSE, Univariate_Plots2}
+##  2. ProsperScore
+
+ggplot(aes(x = ProsperScore), data = loandf) + 
+  geom_histogram(binwidth = 1)+
+  xlab("Prosper Score")+
+  labs(title = "Prosper Score")+
+  scale_x_continuous(breaks = 0:12)
+
+summary(loandf$ProsperScore)
+```
+
+The chart of ProsperScores of borrowers shows a normal distribution with only a small number of borrowers falling the lower end of ProsperScore 1 as compared to the other end of ProsperScore 10.
+
+
+```{r echo=FALSE, Univariate_Plots3}
+
+# 3. BorrowerRate
+
+ggplot(aes(x = BorrowerRate), data = loandf) + 
+  geom_histogram(binwidth = 1)+
+  xlab("BorrowerRate (%)")+
+  labs(title = "Borrower Rate (%)")
+
+summary(loandf$BorrowerRate)
+```
+
+This plot is positively skewed and there is also a spike in BorrowerRate at 32%.
+
+
+```{r echo=FALSE, Univariate_Plots4}
+
+##  4. EmploymentStatusDuration
+ggplot(aes(x = EmploymentStatusDuration/12), data = loandf) + 
+  geom_histogram(binwidth = 1)+
+  xlab("Employment Status Duration (Years)")+
+  labs(title = "Employment Status Duration (Years)")
+
+summary(loandf$EmploymentStatusDuration)
+```
+
+This plot is very positively skewed. It shows that most of the borrowers are still in the early stage of their careers or life. It mightr be because more liability can be taken up by them to leverage into getting education or house.
+
+```{r echo=FALSE, Univariate_Plots5}
+
+##  5. Term
+ggplot(aes(x = Term), data = loandf, x = Term) + 
+  geom_bar(colour="black", stat="count")+
+  xlab("Term (Months)")+
+  scale_x_continuous(breaks = c(12,36,60), labels = c("12", "36", "60"))+
+  #scale_x_discrete(labels=c(12,36,60))+
+  labs(title = "Term (Months)")
+
+summary(loandf$Term)
+```
+
+This plot shows that the 36 months Term is the most popular of the 3 repayment programme followed by 60 months Term and then 12 months Term.
+
+```{r echo=FALSE, Univariate_Plots6}
+## 6. DelinquenciesLast7Years
+ggplot(aes(x = DelinquenciesLast7Years), data = na.omit(filter(loandf, DelinquenciesLast7Years!=0))) +
+  geom_histogram(binwidth = 1)+
+  xlab("Delinquencies Last 7 Years")+
+  labs(title = "Delinquencies Last 7 Years")
+
+summary(loandf$DelinquenciesLast7Years)
+```
+
+This plot is very positively skewed. It shows that most of the borrowers are either usually punctual in their payment or they are still young and do not have much opportunities for such a bad track record.
+
+```{r echo=FALSE, Univariate_Plots7}
+## 7. DebtToIncomeRatio
+
+
+ggplot(aes(x = DebtToIncomeRatio), data = loandf) +
+  geom_histogram(binwidth = 0.01)+
+  xlab("Debt To Income Ratio)")+
+  scale_x_continuous(name="Debt To Income Ratio", limits=c(0, 1))+
+  labs(title = "Debt To Income Ratio")
+
+
+summary(loandf$DebtToIncomeRatio)
+```
+
+The mean of this plot is at 27.6%. It is also positively skewed. It means that most of the borrowers are only willing to take up about a quarter of their annual income as their loan. It also shows the risk that the borrowers are willing to take.
+
+```{r echo=FALSE, Univariate_Plots8}
+## 8. IncomeRange 
+ggplot(aes(x = IncomeRange), data = loandf, xlim=c(0,10)) +
+  geom_bar(colour="black", stat="count")+
+  xlab("Income Range")+
+  coord_flip()+
+  scale_x_discrete(limits=c("$0","$1-24,999","$25,000-49,999",
+                            "$50,000-74,999","$75,000-99,999",
+                            "$100,000+","Not displayed","Not employed"))+
+  labs(title = "Income Range")
+summary(loandf$IncomeRange)
+```
+
+Most of the borrowers fall under the IncomeGroup of $25,000-49,999. It shows that most of the borrowers are still in the early stage of their careers or life. It mightr be because more liability can be taken up by them to leverage into getting education or house. 
+
+```{r echo=FALSE, Univariate_Plots9}
+## 9. ProsperPrincipalOutstanding
+ggplot(aes(x = ProsperPrincipalOutstanding), 
+       data = na.omit(filter(loandf,ProsperPrincipalOutstanding!=0))) +
+  geom_histogram(binwidth = 500)+
+  xlab("Prosper Principal Outstanding")+
+  labs(title = "Prosper Principal Outstanding")
+summary(loandf$ProsperPrincipalOutstanding)
+ 
+```
+
+This is a positively skewed plot. However, this plot only shows the current prosper principal outstanding at the time the data was being extracted. Thus, the data displayed would have been invalid to be evaluated based it alone. Other variables should be included to find out more information.
+
+```{r echo=FALSE, Univariate_Plots10}
+#10. LoanOriginalAmount (Whole number)
+ggplot(aes(x = LoanOriginalAmount), data = loandf) +
+  geom_histogram(binwidth = 1000)+
+  xlab("Loan Original Amount)")+
+  labs(title = "Loan Original Amount")
+
+summary(loandf$LoanOriginalAmount)
+```
+
+It can be observed that most of the borrowers tend to choose LoanOriginalAmount in the multiples of $5000.
+
+```{r echo=FALSE, Univariate_Plots11}
+## 11. MonthlyLoanPayment
+ggplot(aes(x = MonthlyLoanPayment), data = loandf) +
+  geom_histogram(binwidth = 100)+
+  xlab("Monthly Loan Payment)")+
+  scale_x_continuous(name="Monthly Loan Payment", limits=c(-100, 1500)) +
+  labs(title = "Monthly Loan Payment")
+summary(loandf$MonthlyLoanPayment)
+```
+
+This shows a positively skewed chart. But as monthly loan payment is usually a percentage of the original principal amount, not much can be seen from this chart.
+
+```{r echo=FALSE, Univariate_Plots12}
+## 12. LoanStatus
+
+ggplot(aes(x = LoanStatus), data = loandf) +
+  geom_bar(colour="black", stat="count")+
+  xlab("Loan Status") +
+  labs(title = "Loan Status")
+
+summary(loandf$LoanStatus)
+
+
+```
+
+It can be seen that the current borrowers in loan are 56576 which is majority of Prosper's overall clients. With every 100 people who complete the loan payment on time, there will be around 13 people who will default on their loan.
+
+```{r echo=FALSE, Univariate_Plots13}
+## 13. Recommendations
+ggplot(aes(x = Recommendations), data = loandf) +
+  geom_histogram(binwidth = 1)+
+  xlab("Recommendations)")+
+  labs(title = "Recommendations")+
+  scale_x_continuous(name="Recommendations", breaks= (0:5),limits=c(-1, 5))
+
+summary(loandf$Recommendations)
+
+```
+
+Most of the borrowers do not have recommendations by others and are also able to take up a loan.
+
+```{r echo=FALSE, Univariate_Plots14}
+## 14. EmploymentStatus
+
+ggplot(aes(x = EmploymentStatus), data = loandf) +
+  geom_bar(colour="black", stat="count")+
+  xlab("Employment Status")+
+  labs(title = "Employment Status")
+
+summary(loandf$EmploymentStatus)
+```
+
+Majority of the borrowers have jobs. This might be a requirement for them to take up the loan or for lenders to offer them.
+
+```{r echo=FALSE, Univariate_Plots15}
+## 15. IsBorrowerHomeowner
+ggplot(aes(x = IsBorrowerHomeowner), data = loandf) +
+  geom_bar(colour="black", stat="count")+
+  xlab("Is Borrower Homeowner")+
+  labs(title = "Is Borrower Homeowner")
+summary(loandf$IsBorrowerHomeowner)
+```
+
+The number of home owners and non-home owners are almost equal.
+
+```{r echo=FALSE, Univariate_Plots16}
+## 16. IncomeVerifiable
+ggplot(aes(x = IncomeVerifiable), data = loandf, xlim=c(0,10),
+       x = IncomeVerifiable) +
+  geom_bar(colour="black", stat="count")+
+  xlab("Income Verifiable")+
+  labs(title = "Income Verifiable")
+
+summary(loandf$IncomeVerifiable)
+```
+
+Most of the borrowers have their income verified.
+
+```{r echo=FALSE, Univariate_Plots17}
+## 17. EstimatedEffectiveYield
+ggplot(aes(x = EstimatedEffectiveYield), data = loandf) +
+  geom_histogram(binwidth = 0.1)+
+  xlab("Estimated Effective Yield")+
+  labs(title = "Estimated Effective Yield")+
+  scale_y_continuous(limits=c(0, 1000))+
+  scale_x_continuous(name="EstimatedEffectiveYield",limits=c(-20, 30))
+
+summary(loandf$EstimatedEffectiveYield)
+```
+
+It can be seen that most of the EstimatedEffectiveYield lies in the positive region while only a small amount lie in the negative region.
+
+# Univariate Analysis
+
+### What is the structure of your dataset?
+The original dataset comprised of 113937 observations and with 81 variables. They are in the form of class num, int, Factor.
+
+Features of interest
+
+It is impossible to analyse such a big dataset for the scope of this project. Thus, variables have been narrowed down to 20.
+
+The 20 Features are:
+
+Discrete Data (8):
+- LoanOriginationyear
+- LoanOriginationmonth
+- Term
+- IncomeRange
+- LoanStatus
+- EmploymentStatus
+- IsBorrowerHomeowner
+- IncomeVerifiable
+
+Continuous Data (12):
+- ProsperScore
+- BorrowerRate
+- EmploymentStatusDuration
+- DelinquenciesLast7Years
+- DebtToIncomeRatio
+- ProsperPrincipalOutstanding
+- LoanOriginalAmount
+- MonthlyLoanPayment
+- Recommendations
+- EstimatedEffectiveYield
+- LenderYield
+- DifferenceInRate
+
+### What is/are the main feature(s) of interest in your dataset?
+
+The main feature of interest is the BorrowerRate.
+
+### What other features in the dataset do you think will help support your investigation into your feature(s) of interest?
+
+ProsperScore is a custom risk score built using historical Prosper data. The score ranges from 1-10, with 10 being the best, or lowest risk score.  Applicable for loans originated after July 2009.
+
+However, I would like to investigate how much the other variables will affect the BorrowerRate and EstimatedEffectiveYield.
+
+
+### Did you create any new variables from existing variables in the dataset?
+Yes, the following will describe the new variable created.
+
+DifferenceInRate
+This new feature has been engineered to find out the difference in BorrowerRate and EstimatedEffectiveYield.
+
+
+### Of the features you investigated, were there any unusual distributions? Did you perform any operations on the data to tidy, adjust, or change the form of the data? If so, why did you do this?
+
+- Made these as percentages as my preference for analysing them.
+BorrowerRate
+EstimatedEffectiveYield
+LenderYield
+
+ProsperScore
+It is observed that ProsperScore has values of 11. This is strange as the variable can only range from 1-10. Thus, values of 11 has been changed to 10 as 11 is beyond the maximum value of 10.
+
+LoanOriginationDate
+This is split into LoanOriginationyear and LoanOriginationmonth to observe any trend in months or years.
+
+EmploymentStatus
+Values in this features that are empty or "Not available" are being changed to "Other"
+Using factoring to rearrange the sequence of categories being displayed. This will improve the plotting of charts and analysis later.
+
+LoanStatus
+A new label has been created, "Delayed", to represent all the LoanStatus that are past their due date.
+
+# Bivariate Plots (GGPairs Correlation)
+```{r echo=FALSE, Bivariate_Organise}
+
+
+loandf_con<-subset(loandf, select=c("ProsperScore",
+                                    "BorrowerRate",
+                                    "EmploymentStatusDuration",
+                                    "DelinquenciesLast7Years",
+                                    "DebtToIncomeRatio",
+                                    "ProsperPrincipalOutstanding",
+                                    "LoanOriginalAmount",
+                                    "MonthlyLoanPayment",
+                                    "Recommendations",
+                                    "EstimatedEffectiveYield",
+                                    "LenderYield",
+                                    "DifferenceInRate"))
+
+
+loandf_cat<-subset(loandf, select=c("LoanOriginationyear",
+                                    "LoanOriginationmonth",
+                                    "Term",
+                                    "IncomeRange",
+                                    "LoanStatus",
+                                    "EmploymentStatus",
+                                    "IsBorrowerHomeowner",
+                                    "IncomeVerifiable")) 
+
+set.seed(20022012)
+loan_samp_con <- loandf_con[sample(1:length(loandf_con$BorrowerRate), 1000), ]
+loan_samp_cat <- loandf_cat[sample(1:length(loandf_con$BorrowerRate), 1000), ]
+```
+
+### Organise into Categorical Data and Continuous Data
+
+Splitting the data into Categorical Data and Continuous Data so that proper correlation plots using ggpairs can be done in the next step. 
+The following plots are for me to the correlation between all the features and also to visualise a rough plot between them before I choose the appropriate ones for deeper analysis.
+
+```{r echo=FALSE, fig.width=25, fig.height=18, Bivariate_Exploration_Plots(GGPairs1)}
+# 1. GGPairs Correlation Plots between the features
+
+## Continuous Features
+ggpairs(loan_samp_con,
+        upper = list(continuous = wrap("cor", size = 4)), 
+        lower = list(continuous = "smooth"),
+        axisLabels="internal", 
+        title = "GGpairs Correlation Plot (Continuous)")+
+  theme(axis.text.x=element_text(size=5))
+```
+
+### Continuous Features Correlation Plot:
+
+Higher Correlations with BorrowerRate:
+- ProsperScore
+- LoanOriginalAmount
+- MonthlyLoanPayment
+- Others like LenderYield & EstimatedEffectiveYield are needless to say also highly correlated to BorrowerRate
+
+Higher Correlations with EstimatedEffectiveYield:
+- ProsperScore
+- LoanOriginalAmount
+- MonthlyLoanPayment
+- Others like BorrowerRate & LenderYield are needless to say also highly correlated to EstimatedEffectiveYield
+
+```{r echo=FALSE, fig.width=25, fig.height=18, Bivariate_Exploration_Plots(GGPairs2)}
+## Categorical Features
+ggpairs(loan_samp_cat,
+        upper = list(continuous = wrap("cor", size = 4)), 
+        lower = list(continuous = "smooth"),
+        axisLabels="internal", 
+        title = "GGpairs Correlation Plot (Categorical)")+
+  theme(axis.title=element_text(size=5, angle=90),
+        axis.text.y=element_text(angle=0))
+```
+
+From this plot, I can see that there is a certain pattern for a Term and IncomeRange when it is plotted against the other variables. This made me interested in using these two variables for further investigation with the main feature of interest.
+
+
+# Bivariate Plots
+
+```{r echo=FALSE, fig.width=15, fig.height=7, Bivariate_Plots1}
+## 1. BorrowerRate - ProsperScore
+ggplot(data = na.omit(filter(loandf, !is.na(ProsperScore))),
+       aes(x = factor(ProsperScore), y = BorrowerRate)) +
+  geom_boxplot(varwidth = FALSE) +
+  xlab("Prosper Score") +
+  ylab("Borrower's Rate") +
+  scale_x_discrete(breaks = c(1:10))+
+  ggtitle("Borrower's Rate against Prosper Score")
+## Title `cor(loandf$ProsperScore, loandf$BorrowerRate, use="complete")` Header
+
+```
+
+With a higher ProsperScore, the BorrowerRate can be lowered.
+
+```{r echo=FALSE, fig.width=15, fig.height=7, Bivariate_Plots2}
+
+## 2. Borrower Rate for Loan Original Amount
+ggplot(data = loandf, aes(x = LoanOriginalAmount, y = BorrowerRate)) +
+        geom_point(alpha=0.1) +
+        xlab("Loan Original Amount") +
+        ylab("Borrower Rate") +
+        ggtitle("Borrower Rate for Loan Original Amount")
+```
+
+It can be seen that as the LoanOriginalAmount gets larger, the range of difference in BorrowerRate decreases. It converges into around 10-20% BorrowerRate at the maximum LoanOriginalAmount of $35000.
+
+```{r echo=FALSE, fig.width=15, fig.height=7, Bivariate_Plots3}
+## 3. Different Borrower Rate for different Income Range
+ggplot(data = loandf, aes(x = IncomeRange, y = BorrowerRate)) +
+        geom_boxplot() +
+        xlab("Income Range")+
+        ylab("Borrower Rate") +
+        ggtitle("Different Borrower Rate for different Income Range")+
+        scale_x_discrete(limits=c("Not displayed", "Not employed",
+                                  "$0","$1-24,999", "$25,000-49,999",  
+                                  "$50,000-74,999", "$75,000-99,999",
+                                  "$100,000+"))
+```
+
+As can be seen in the boxplots, the mean of BorrowerRate becomes lower at a higher IncomeRange. This may be correlated to their ability to support the loan and thus a lower BorrowerRate with less risk of them being unable to support the loan.
+
+```{r echo=FALSE, fig.width=15, fig.height=7, Bivariate_Plots4}
+
+## 4. Estimated Effective Yield against Prosper Score
+ggplot(data = na.omit(filter(loandf, !is.na(ProsperScore))),
+       aes(x = factor(ProsperScore), y = EstimatedEffectiveYield)) +
+        geom_boxplot() +
+        xlab("Prosper Score") +
+        ylab("Estimated Effective Yield") +
+        scale_x_discrete(breaks = c(1:10))+
+        ggtitle("Estimated Effective Yield against Prosper Score")
+```
+
+With a higher ProsperScore, the EstimatedEffectiveYield which is also the returns of the invested loans will be lower as there is less risk. However, for lower ProsperScore, there is also a risk of getting negative EstimatedEffectiveYield.
+
+```{r echo=FALSE, fig.width=15, fig.height=7, Bivariate_Plots5}
+
+## 5. Estimated Effective Yield for different Income Range
+ggplot(data = loandf, aes(x = IncomeRange, y = EstimatedEffectiveYield)) +
+  geom_boxplot() +
+  xlab("IncomeRange")+
+  ggtitle("Estimated Effective Yield for different Income Range")+
+  scale_x_discrete(limits=c("Not displayed", "Not employed", "$0","$1-24,999",
+                            "$25,000-49,999", "$50,000-74,999",
+                            "$75,000-99,999", "$100,000+"))
+```
+
+It can be seen that lenders that lend their money to people who have income will have a higher tendency of having negative EstimatedEffectiveYield compared to lending money to those who have $0.
+
+```{r echo=FALSE, fig.width=15, fig.height=7, Bivariate_Plots6}
+
+## 6. Prosper Score for Different Loan Original Amount
+ggplot(data = na.omit(filter(loandf, !is.na(ProsperScore))),
+       aes(x = LoanOriginalAmount, y = ProsperScore)) +
+  geom_point(alpha=0.1, position = "jitter") +
+  xlab("Loan Original Amount") +
+  ylab("Prosper Score") +
+  ggtitle("Prosper Score for Different Loan Original Amount")
+```
+
+It can be seen that as the ProsperScore increases, the LoanOriginalAmount has a bigger range. Those with better ProsperScore tend to be able to get higher LoanOriginalAmount. It is also interesting that the points are concentrated where LoanOriginalAmount is in multiples of $5000.
+
+```{r echo=FALSE, fig.width=15, fig.height=7, Bivariate_Plots7}
+
+## 7. Monthly Loan Payment against Loan Original Amount
+ggplot(data = loandf, aes(x = LoanOriginalAmount, y = MonthlyLoanPayment)) +
+  geom_point(alpha =0.10) +
+  xlab("Loan Original Amount") +
+  ylab("Monthly Loan Payment") +
+  ggtitle("Monthly Loan Payment against Loan Original Amount")
+```
+
+From the plot shown, it can be seen that people tend to choose a range of 2.5% to 10% of their LoanOriginalAmount as their MonthlyLoanPayment.
+
+```{r echo=FALSE, fig.width=15, fig.height=7, Bivariate_Plots8}
+
+## 8. Prosper Score for Different Debt To Income Ratio
+ggplot(data = na.omit(filter(loandf, !is.na(ProsperScore))),
+       aes(x = factor(ProsperScore), y = DebtToIncomeRatio)) +
+  geom_boxplot(alpha=0.5) +
+  xlab("Prosper Score") +
+  ylab("Debt To Income Ratio") +
+  scale_y_continuous(limits = c(0:1.5))+
+  ggtitle("Prosper Score for Different Debt To Income Ratio")
+```
+
+It can be seen that as the ProsperScore increases, the DebtToIncomeRatio has a smaller range. People with lower ProsperScore are getting higher debts and putting more strain on their income. 
+
+
+# Bivariate Analysis
+
+### Talk about some of the relationships you observed in this part of the investigation. How did the feature(s) of interest vary with other features in the dataset?
+
+#### BorrowerRate:
+
+With a higher ProsperScore, the BorrowerRate can be lower.
+It can be seen that as the LoanOriginalAmount gets larger, the range of difference in BorrowerRate decreases. It converges into around 10-20% BorrowerRate.
+As can be seen in the boxplots, the mean of BorrowerRate becomes lower at a higher IncomeRange. This may be correlated to their ability to support the loan and thus a lower BorrowerRate with less risk of them being unable to support the loan.
+
+#### EstimatedEffectiveYield:
+
+With a higher ProsperScore, the EstimatedEffectiveYield which is also the returns of the invested loans will be lower as there is less risk. However, for lower ProsperScore, there is also a risk of getting negative EstimatedEffectiveYield.
+
+It can be seen that lenders that lend their money to people who have income will have a higher tendency of having negative EstimatedEffectiveYield compared to lending money to those who have $0.
+
+### Did you observe any interesting relationships between the other features (not the main feature(s) of interest)?
+
+#### Prosper Score for Different Loan Original Amount
+
+##### It can be seen that as the ProsperScore increases, the LoanOriginalAmount has a bigger range. Those with better ProsperScore tend to be able to get higher LoanOriginalAmount.
+
+#### Monthly Loan Payment against Loan Original Amount
+
+##### From the plot shown, it can be seen that people tend to choose a range of 2.5% to 10% of their LoanOriginalAmount as their MonthlyLoanPayment.
+
+#### Prosper Score for Different Debt To Income Ratio
+
+##### It can be seen that as the ProsperScore increases, the DebtToIncomeRatio has a smaller range. People with lower ProsperScore are getting higher debts and putting more strain on their income. 
+
+
+### What was the strongest relationship you found?
+Plotting multiple features up against each other in ggpairs, the correlation can be seen between the features. The highest correlation value is between LoanOriginalAmount and MonthlyLoanPayment. However, this likely due to borrowers giving fixed MonthlyLoanPayment which is proportional to the LoanOriginalAmount.
+
+If we were to look at the strongest relationship with BorrowerRate, the ProsperScore is most correlated to it.
+
+# Multivariate Plots Section
+
+```{r echo=FALSE, fig.width=12, fig.height=7, Multivariate_Plots1}
+# https://www.r-bloggers.com/how-to-plot-three-categorical-variables-and-one-continuous-variable-using-ggplot2/
+
+
+## 1. LoanOriginalAmount	BorrowerRate IncomeRange
+ggplot(data = loandf, aes(x = LoanOriginalAmount/1000, y = BorrowerRate)) +
+  geom_point(alpha = 0.1, position = "jitter") +
+  geom_boxplot(alpha = 0.5) +
+  facet_grid(. ~ IncomeRange) +
+  xlab("Loan Original Amount (1000s)") +
+  ylab("Borrower Rate") +
+  ggtitle("Borrower Rate for Different Loan Original Amount\n 
+          Grouped by Income Range")
+
+```
+
+In this plot, we can see how the different BorrowerRate will differ for each IncomeRange groups. It also shows the range of LoanOriginalAmount that the borrowers will take up.
+
+
+```{r echo=FALSE, fig.width=12, fig.height=7, Multivariate_Plots2}
+## 2. DebtToIncomeRatio	BorrowerRate ProsperScore
+plot3 <- ggplot(aes(x= DebtToIncomeRatio, y=BorrowerRate, color=ProsperScore), 
+                data=na.omit(filter(loandf, DebtToIncomeRatio < 1.5))) +
+  geom_point(alpha = 0.5) +
+  scale_colour_gradient(low="red", high="blue", space="Lab")+
+  xlab (NULL) +
+  ylab ("Borrower Rate") +
+  ggtitle("Borrower Rate against Debt to Income Ratio\n
+          with Prosper Score Colour Gradient") +
+  scale_fill_discrete(name = "Prosper Score")
+
+plot4 <- ggplot(aes(x= DebtToIncomeRatio),
+                data=na.omit(filter(loandf, DebtToIncomeRatio < 2.5))) +
+  geom_density()+
+  xlab ("Debt To Income Ratio") +
+  ylab ("Borrower Rate") +
+  scale_fill_discrete(name = "Prosper Score")+
+  scale_x_continuous(name="Debt To Income Ratio",limits=c(-0, 2.07))
+
+grid.arrange(arrangeGrob(plot3,plot4, heights=c(6/8, 2/8), nrow=2))
+
+
+```
+
+This plots shows the BorrowerRate against DebtToIncomeRatio with colour gradient based on ProsperScore. It can be seen from the plot that for a borrower to have a low BorrowerRate, it is better to have a better ProsperScore and also low DebtToIncomeRatio.
+
+
+```{r echo=FALSE, fig.width=12, fig.height=7, Multivariate_Plots3}
+## 3. Borrower Rate Against Prosper Rating grouped by Term
+plot5 <- ggplot(aes(x= ProsperScore, y=BorrowerRate,
+                    color=ProsperScore),
+                data=na.omit(filter(loandf, DebtToIncomeRatio < 1))) +
+  geom_point(alpha = 0.5, position = "jitter") +
+  facet_grid( .~ Term  ) +
+  scale_colour_gradient(low="red", high="gold", space="Lab")+
+  ggtitle("Borrower Rate Against Prosper Rating \nGrouped by Term")
+
+plot6 <- ggplot(aes(x= ProsperScore, y= BorrowerRate ),
+                data=na.omit(filter(loandf, DebtToIncomeRatio < 1))) +
+  geom_boxplot(aes(fill = ProsperScore), varwidth = TRUE) +
+  facet_grid( .~ Term   ) +
+  scale_colour_gradient(low="red", high="gold", space="Lab")+
+  ggtitle("Borrower Rate Against Prosper Rating \nGrouped by Term")
+
+grid.arrange(arrangeGrob(plot5,plot6, widths=c(5/8, 3/8), ncol=2))
+
+```
+
+This plot shows the BorrowerRate against ProsperScore and grouped by Term. The distribution of the loans can be seen clearly here grouped according to Term. 36 months Term is the most popular across all ProsperScore borrower profiles.
+
+```{r echo=FALSE, fig.width=12, fig.height=7, Multivariate_Plots4}
+## 4. ProsperScore-BorrowerRate 
+ggplot(data = na.omit(filter(loandf, !is.na(ProsperScore))),
+       aes(x = ProsperScore, y = BorrowerRate)) +
+  geom_point(alpha = 0.08, position = "jitter") +  
+  geom_boxplot(varwidth = TRUE, alpha = 0.2) + #Previously alpha=0.1
+  facet_grid( .~ IncomeRange) +
+  ggtitle("Borrower Rate Against\n Prosper Score\n Grouped by Income Range")+
+  xlab("ProsperScore")
+
+```
+
+This plot shows the BorrowerRate against the ProsperScore grouped by IncomeRange. In this plot, it also shows the distribution of the IncomeRange groups using the width of the boxplots.
+
+
+
+# Multivariate Analysis
+
+### Talk about some of the relationships you observed in this part of the investigation. Were there features that strengthened each other in terms of looking at your feature(s) of interest?
+
+The variables are LoanOriginalAmount, DebtToIncomeRatio and Term. It is true that ProsperScore is also correlated to BorrowerRate.
+
+### Were there any interesting or surprising interactions between features?
+
+Assuming that there is nothing one can do about the ProsperScore, those three variables are the things that can be changed to get a lower BorrowerRate.
+
+------
+
+# Final Plots and Summary
+
+### Plot One
+```{r echo=FALSE, fig.width=12, fig.height=7, Plot_One}
+## 1. Borrower Rate for Different Loan Original Amount Grouped by Income Range
+
+ggplot(data = loandf, aes(x = LoanOriginalAmount/1000, y = BorrowerRate)) +
+  geom_point(alpha = 0.1, position = "jitter") +
+  geom_boxplot(alpha = 0.5) +
+  facet_grid(. ~ IncomeRange) +
+  scale_color_brewer(type = 'div')+
+  xlab("Loan Original Amount (1,000 USD)") +
+  ylab("Borrower Rate (%)") +
+  ggtitle("Borrower Rate for\nDifferent Loan Original Amount\n
+          Grouped by Income Range")
+```
+
+### Description One
+In this plot, we can see how the different BorrowerRate will differ for each IncomeRange groups. It also shows the range of LoanOriginalAmount that the borrowers will take up. The scatter plot shows every points while the boxplots show the distribution of both the LoanOriginalAmount and BorrowerRate. It can be seen that the ranges of BorrowerRate for higher income groups is smaller and the mean of the BorrowerRate is lower for higher income groups. Looking at the widths of the boxplots, it can also be seen that the higher income groups have a wider range of LoanOriginalAmount as compared to the lower income groups. The LoanOriginalAmount is also lower in the lower income groups. It is possible that due to the lower income available to support the debt, it is more risky to loan a larger LoanOriginalAmount to them as compared to higher income groups.
+
+### Plot Two
+```{r echo=FALSE, fig.width=12, fig.height=7, Plot_Two}
+## 2. DebtToIncomeRatio	BorrowerRate ProsperScore****
+
+more_blues <- colorRampPalette(brewer.pal(9,"Blues"))
+
+plot7 <- ggplot(aes(x= DebtToIncomeRatio, y=BorrowerRate, color=factor(ProsperScore)), 
+                data=na.omit(filter(loandf, DebtToIncomeRatio < 1.5))) +
+  geom_point(alpha = 0.4) +
+  xlab (NULL) +
+  ylab ("Borrower Rate (%)") +
+  ggtitle("Borrower Rate against Debt to Income Ratio\n
+          with Prosper Score Colour Gradient")+
+  scale_colour_manual("Prosper Score",values = more_blues(10))
+
+plot8 <- ggplot(aes(x= DebtToIncomeRatio), 
+                data=na.omit(filter(loandf, DebtToIncomeRatio < 2.5))) +
+  geom_density(aes(y =..scaled..))+
+  xlab ("Debt To Income Ratio")+
+  scale_fill_discrete(name = "Prosper Score")+
+  scale_x_continuous(name="Debt To Income Ratio",limits=c(-0, 2.07))
+
+grid.arrange(arrangeGrob(plot7,plot8, heights=c(6/8, 2/8), nrow=2))
+
+
+
+```
+
+### Description Two
+
+This plots shows the BorrowerRate against DebtToIncomeRatio with colour gradient based on ProsperScore. It is shown that at the region of lower BorrowerRate, it is dominated by ProsperScore that are very high. It can also be observed that for those with a mid-range ProsperScore will tend to get a mid-range BorrowerRate and also go for higher amount of loan as compared to their income. This can be seen in the plot that there is a divergence towards the right as the BorrowerRate is higher and also that the points nearer to the right represent Mid-range ProsperScore. 
+
+### Plot Three
+```{r echo=FALSE, fig.width=12, fig.height=7, Plot_Three}
+## 3. Borrower Rate Against Prosper Rating grouped by Term
+ggplot(aes(x= ProsperScore, y=BorrowerRate), 
+       data=na.omit(filter(loandf, DebtToIncomeRatio < 1))) +
+  geom_point(alpha = 0.05, position = "jitter") + 
+  geom_boxplot(alpha = 0.0,varwidth = TRUE) +
+  facet_grid( .~ Term  ) +
+  ylab ("Borrower Rate (%)") +
+  scale_colour_gradient(low="red", high="gold", space="Lab")+
+  ggtitle("Borrower Rate\n Against Prosper Rating\n Grouped by Term")
+
+```
+
+### Description Three
+
+This plot shows the BorrowerRate against ProsperScore and grouped by Term. The distribution of the loans can be seen clearly here grouped according to Term. 36 months Term is the most popular across all ProsperScore borrowers and points are very well distributed in BorrowerRate and ProsperScore. It can be seen that for borrowers choosing the 12 months Term for repayment, their BorrowerRate mean is also lower than higher months Term repayment plan. For the 60 months repayment Term, it has a smaller range of BorrowerRate but its mean is just slightly higher than that of the 36 months Term. From this plot, for someone who is looking for a lower BorrowerRate, choosing a shorter payment Term has a higher chance of getting a BorrowerRate. 
+
+
+------
+
+# Reflection
+
+From the analysis of the many plots done in this project, I can say that some of the variables are correlated to getting a lower BorrowerRate. The variables are LoanOriginalAmount, DebtToIncomeRatio and Term. It is true that ProsperScore is also correlated to BorrowerRate. However, assuming that there is nothing one can do about the ProsperScore, those three variables are the things that can be changed to get a lower BorrowerRate. 
+
+As for EstimatedEffectiveYield, it is very correlated with BorrowerRate. So if a lender were to try to increase the EstimatedEffectiveYield, they might be interested in taking up more risks and look for borrowers who have a higher LoanOriginalAmount, DebtToIncomeRatio and also longer Term.
+
+Where did I run into difficulties in the analysis?
+
+This dataset is a rather huge one for a beginner in R and also data analysis. Although there are 81 variables in this dataset, I can choose the few that I am interested in and perform some data exploration on them in univariate analysis and bivariate analysis before coming down to performing multivariate analysis on them. 
+
+I had some difficulties in the different types of parameters in plotting the graphs and also thinking about how it will be best to arrange the data for optimal comprehension.
+
+Where did I find successes?
+Overall, I am satisfied with the skills that I have learnt while doing this project. I appreciate the visualisation of multiple variables and also analysing them to see patterns unfold.
+
+How could the analysis be enriched in future work (e.g. additional data and analyses)?
+Of course, further analysis can be done for this project but it will be too huge and time consuming for just one project. Some ideas will be to analyse the ProsperScore and find out what are the variables that decide the score. So if someone is interested in getting a loan for a better BorrowerRate, they can be interested in improving their ProsperScore.
