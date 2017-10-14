@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+	<meta charset="utf-8">
+	<title> Flight Performance Analysis (2010-2016) </title>
+	<script src="http://d3js.org/d3.v3.min.js"></script>
+	<script src="http://dimplejs.org/dist/dimple.v2.0.0.min.js"></script>
+
+	<script type="text/javascript">
+		function draw(data) {
+
+			/*
+        D3.js setup code 
+		http://chimera.labs.oreilly.com/books/1230000000345/ch04.html#_setting_up_a_web_server
+		python -m SimpleHTTPServer 8888 &
+		http://localhost:8888/
+      */
+
+			"use strict";
+			var margin = 75,
+				width = 1400 - margin,
+				height = 600 - margin;
+
+			var svg = d3.select("body")
+				.append("svg")
+				.attr("width", width + margin)
+				.attr("height", height + margin)
+				.append('g')
+				.attr('class', 'chart');
+
+			d3.select('#content')
+				.append('h2')
+				.attr('id', 'title')
+				.text('Top Flight Performance Arrival, 2010-2016');
+
+			var svg2 = d3.select("body")
+				.append("svg")
+				.attr("width", width + margin)
+				.attr("height", height + margin)
+				.append('g')
+				.attr('class', 'chart');
+
+			d3.select('#content')
+				.append('h2')
+				.attr('id', 'title')
+				.text('Top Flight Performance Departure, 2010-2016');
+
+
+
+			/*
+			  Dimple.js Chart construction code
+			*/
+			/*
+			  Top Arrival
+			*/
+			var myChart = new dimple.chart(svg, data);
+			var x = myChart.addTimeAxis("x", "YEAR");
+			x.tickFormat = '%Y';
+			x.title = 'Year';
+			var y = myChart.addMeasureAxis('y', 'PUNCTUALITYARR');
+			y.tickFormat = '%';
+			y.overrideMin = 0.7;
+			y.overrideMax = 0.95;
+			/*myChart.addMeasureAxis("y", "PUNCTUALITYARR");*/
+			myChart.addSeries(["UNIQUE_CARRIER"], dimple.plot.line);
+			myChart.addSeries(["UNIQUE_CARRIER"], dimple.plot.scatter);
+			myChart.addLegend(width * 0.7, 100, width * 0.27, 200, 'right');
+			myChart.draw();
+
+			/*
+			  Top Departure
+			*/
+			var myChart = new dimple.chart(svg2, data);
+			var x = myChart.addTimeAxis("x", "YEAR");
+			x.tickFormat = '%Y';
+			x.title = 'Year';
+			var y = myChart.addMeasureAxis('y', 'PUNCTUALITYDEP');
+			y.tickFormat = '%';
+			y.overrideMin = 0.7;
+			y.overrideMax = 0.95;
+			/*myChart.addMeasureAxis("y", "PUNCTUALITYDEP");*/
+			myChart.addSeries(["UNIQUE_CARRIER"], dimple.plot.line);
+			myChart.addSeries(["UNIQUE_CARRIER"], dimple.plot.scatter);
+			myChart.addLegend(width * 0.7, 100, width * 0.27, 200, 'right');
+			myChart.draw();
+
+
+		};
+
+		function draw2(data) {
+
+			/*
+        D3.js setup code 
+		http://chimera.labs.oreilly.com/books/1230000000345/ch04.html#_setting_up_a_web_server
+		python -m SimpleHTTPServer 8888 &
+		http://localhost:8888/
+      */
+
+			"use strict";
+			var margin = 75,
+				width = 1400 - margin,
+				height = 600 - margin;
+
+
+			var svg3 = d3.select("body")
+				.append("svg")
+				.attr("width", width + margin)
+				.attr("height", height + margin)
+				.append('g')
+				.attr('class', 'chart');
+
+			d3.select('#content')
+				.append('h2')
+				.attr('id', 'title')
+				.text('Bottom Flight Performance Arrival, 2010-2016');
+
+			var svg4 = d3.select("body")
+				.append("svg")
+				.attr("width", width + margin)
+				.attr("height", height + margin)
+				.append('g')
+				.attr('class', 'chart');
+
+			d3.select('#content')
+				.append('h2')
+				.attr('id', 'title')
+				.text('Bottom Flight Performance Departure, 2010-2016');
+
+
+			/*
+			  Dimple.js Chart construction code
+			*/
+			/*
+			  Bottom Arrival
+			*/
+			var myChart = new dimple.chart(svg3, data);
+			var x = myChart.addTimeAxis("x", "YEAR");
+			x.tickFormat = '%Y';
+			x.title = 'Year';
+			var y = myChart.addMeasureAxis('y', 'PUNCTUALITYARR');
+			y.tickFormat = '%';
+			y.overrideMin = 0.7;
+			y.overrideMax = 0.95;
+			/*myChart.addMeasureAxis("y", "PUNCTUALITYARR");*/
+			myChart.addSeries(["UNIQUE_CARRIER"], dimple.plot.line);
+			myChart.addSeries(["UNIQUE_CARRIER"], dimple.plot.scatter);
+			myChart.addLegend(width * 0.7, 100, width * 0.27, 200, 'right');
+			myChart.draw();
+
+			/*
+			  Bottom Departure
+			*/
+			var myChart = new dimple.chart(svg4, data);
+			var x = myChart.addTimeAxis("x", "YEAR");
+			x.tickFormat = '%Y';
+			x.title = 'Year';
+			var y = myChart.addMeasureAxis('y', 'PUNCTUALITYDEP');
+			y.tickFormat = '%';
+			y.overrideMin = 0.7;
+			y.overrideMax = 0.95;
+			/*myChart.addMeasureAxis("y", "PUNCTUALITYDEP");*/
+			myChart.addSeries(["UNIQUE_CARRIER"], dimple.plot.line);
+			myChart.addSeries(["UNIQUE_CARRIER"], dimple.plot.scatter);
+			myChart.addLegend(width * 0.7, 100, width * 0.27, 200, 'right');
+			myChart.draw();
+		};
+	</script>
+</head>
+
+<body>
+	<script type="text/javascript">
+		/*
+		Use D3 (not dimple.js) to load the TSV file
+		and pass the contents of it to the draw function
+		*/
+		d3.csv("index2_data A.csv", draw);
+		d3.csv("index2_data B.csv", draw2);
+	</script>
+</body>
+
+</html>

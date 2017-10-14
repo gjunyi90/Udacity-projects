@@ -1,0 +1,257 @@
+
+<!DOCTYPE html>
+<html>
+
+<head>
+	<meta charset="utf-8">
+	<title> Flight Performance Analysis (2010-2016) </title>
+	<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css"></link>
+
+	<script src="http://d3js.org/d3.v3.min.js"></script>
+	<script src="http://dimplejs.org/dist/dimple.v2.0.0.min.js"></script>
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.1.0/jquery.min.js"></script>
+
+	<style>
+		/*
+		Changes the points on charts to make it attention grabbing but not compromising on visibility of overlapping points
+		*/
+		circle.dimple-series-1{
+			r:8;
+			opacity:0.6;
+		}
+		div.relative {
+			position: relative;
+			text-align: center;
+			margin-top: 50px;
+			margin-bottom: 100px;
+			margin-right: 200px;
+			margin-left: 200px;
+			font-family: Arial, Helvetica, sans-serif;
+			font-size: 15px;
+		}
+	</style>
+
+	<script type="text/javascript">
+		var margin = 75,
+			width = getWidth() - margin,
+			height = getHeight() / 2 - margin;
+		var myChart1, myChart2;
+		var svgA, svgB;
+
+		function draw(data) {
+		/*
+		Draws Data from "final_data_A.csv"
+		*/
+			"use strict";
+			d3.select('#chart1')
+				.append('h2')
+				.attr('id', 'title')
+				.text('Hawaiian Airlines, the Most Punctual in the Industry (Arrival)');
+
+			var svg = d3.select("#chart1")
+				.append("svg")
+				.attr("width", width)
+				.attr("height", "2em")
+				.append('g');
+
+			svgA = dimple.newSvg("#chart1", "100%", "380px");
+
+			d3.select('#chart2')
+				.append('h2')
+				.attr('id', 'title')
+				.text('Hawaiian Airlines, the Most Punctual in the Industry (Departure)')
+				.classed("svg-content-responsive", true);
+
+
+			var svg2 = d3.select("#chart2")
+				.append("svg")
+				.attr("width", width)
+				.attr("height", "2em")
+				.append('g')
+				.attr('class', 'chart')
+				.classed("svg-content-responsive", true);
+
+
+			svgB = dimple.newSvg("#chart2", "100%", "380px");
+
+			/*
+			  Top 25%  Arrival Plotting
+			*/
+			myChart1 = new dimple.chart(svgA, data);
+			var x = myChart1.addTimeAxis("x", "YEAR");
+			x.tickFormat = '%Y';
+			x.title = 'Year';
+			var y = myChart1.addMeasureAxis('y', 'PUNCTUALITYARR');
+			y.title = "Percentage of Flights On-Time";
+			y.tickFormat = '%';
+			y.overrideMin = 0.75;
+			y.overrideMax = 0.95;
+			
+			myChart1.addSeries(["UNIQUE_CARRIER"], dimple.plot.line);
+			myChart1.addSeries(["UNIQUE_CARRIER"], dimple.plot.scatter);
+			myChart1.defaultColors = [
+				new dimple.color("#B7FF00"),
+				new dimple.color("#03E850"),
+				new dimple.color("#0ACCFF"),
+				new dimple.color("#7578E8"),
+				new dimple.color("#DE7CFF")
+			]; 
+			myChart1.ease = "bounce";
+			myChart1.staggerDraw = true;
+			myChart1.addLegend($('.row').width() *0, 300, $('.row').width() *0.85, 300, 'right');
+			myChart1.draw(200);
+			
+			  d3.selectAll('path')
+				.attr('stroke-width', function(d) {
+				  if(d['key'] == "Hawaiian Airlines Inc.") {
+					return 5;
+				  } else {
+					return 1;
+				  }
+				});  
+			  d3.selectAll('path')
+				.attr('opacity', function(d) {
+				  if(d['key'] == "Hawaiian Airlines Inc.") {
+					return 1;
+				  } else {
+					return 0.4;
+				  }
+				});  
+				
+			/*
+			  Top 25% Departure Plotting
+			*/
+			myChart2 = new dimple.chart(svgB, data);
+			var x = myChart2.addTimeAxis("x", "YEAR");
+			x.tickFormat = '%Y';
+			x.title = 'Year';
+			var y = myChart2.addMeasureAxis('y', 'PUNCTUALITYDEP');
+			y.title = "Percentage of Flights On-Time";
+			y.tickFormat = '%';
+			y.overrideMin = 0.75;
+			y.overrideMax = 0.95;
+			myChart2.addSeries(["UNIQUE_CARRIER"], dimple.plot.line);
+			myChart2.addSeries(["UNIQUE_CARRIER"], dimple.plot.scatter);
+			myChart2.addLegend($('.row').width() *0, 300, $('.row').width() *0.85, 300, 'right');
+			myChart2.defaultColors = [
+				new dimple.color("#B7FF00"),
+				new dimple.color("#03E850"),
+				new dimple.color("#0ACCFF"),
+				new dimple.color("#7578E8"),
+				new dimple.color("#DE7CFF")
+			]; 
+			myChart2.ease = "bounce";
+			myChart2.staggerDraw = true;
+			myChart2.draw(500);
+			document.getElementById("chart2").style.display = "none";
+			  d3.selectAll('path')
+				.attr('stroke-width', function(d) {
+				  if(d['key'] == "Hawaiian Airlines Inc.") {
+					return 5;
+				  } else {
+					return 1.5;
+				  }
+				});  
+			  d3.selectAll('path')
+				.attr('opacity', function(d) {
+				  if(d['key'] == "Hawaiian Airlines Inc.") {
+					return 1;
+				  } else {
+					return 0.4;
+				  }
+				}); 
+		};
+
+
+		function getWidth() {
+			/*
+			  Function that sizes the chart width according to the page
+			*/
+			if (self.innerWidth) {
+				return self.innerWidth;
+			}
+
+			if (document.documentElement && document.documentElement.clientWidth) {
+				return document.documentElement.clientWidth;
+			}
+
+			if (document.body) {
+				return document.body.clientWidth;
+			}
+		}
+
+		function getHeight() {
+			/*
+			  Function that sizes the chart height according to the page
+			*/
+			if (self.innerHeight) {
+				return self.innerHeight;
+			}
+
+			if (document.documentElement && document.documentElement.clientHeight) {
+				return document.documentElement.clientHeight;
+			}
+
+			if (document.body) {
+				return document.body.clientHeight;
+			}
+		}
+
+
+		window.onresize = function() {
+			/*
+			  Refresh and changes size
+			*/
+			window.location.reload();
+		};
+
+		function handleToggleHandler(element) {
+			/*
+			  Handles the button changes
+			*/
+			if (document.getElementById("chart1").style.display === "none") {
+				document.getElementById("chart1").style.display = "block";
+				document.getElementById("chart2").style.display = "none";
+				myChart1.draw(500, true);
+			} else {
+				document.getElementById("chart2").style.display = "block";
+				document.getElementById("chart1").style.display = "none";
+				myChart2.draw(0, true);
+			}
+
+		}
+	</script>
+</head>
+
+<script type="text/javascript">
+	/*
+	    Use D3 (not dimple.js) to load the TSV file
+	    and pass the contents of it to the draw function
+	    */
+	d3.csv("final_data_A.csv", draw);
+</script>
+
+<body style="background-color:FloralWhite   ;">
+	<div class="container">
+		<div class="row">
+			<div class="col-md-12">
+				<div id="chart1"></div>
+			</div>
+		</div>
+		<div class="row">
+			<div class="col-md-12">
+				<div id="chart2"></div>
+			</div>
+		</div>
+		<div class="row text-center">
+			<div class="col-md-12">
+				<div id="toolbar">
+					<button class="btn btn-primary" onClick="javascript:handleToggleHandler(this);">Switch Arrival/Departure Chart</button>
+				</div>
+			</div>
+		</div>
+	</div>
+<div class="relative">Hawaiian Airlines Inc is the most punctual airlines in the industry. <br>If time is your most important asset, Hawaiian Airlines will be your best choice.
+</div>
+</body>
+</html>
