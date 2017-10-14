@@ -1,0 +1,4 @@
+https://gist.github.com/carlward/54ec1c91b62a5f911c42#top-10-contributing-users
+http://assemble.io/docs/Cheatsheet-Markdown.html
+https://wiki.openstreetmap.org/wiki/Map_Features
+http://puwenning.github.io/2016/02/10/P3-project-openstreetmap-data-case-study/

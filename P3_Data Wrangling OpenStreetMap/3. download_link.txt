@@ -1,0 +1,5 @@
+
+OpenStreetMap Data Case Study
+Map Area: Newcastle, United Kingdom
+- http://overpass-api.de/api/map?bbox=-2.0009,54.9035,-1.3033,55.1349
+This city is where my University is located at. I missed the city so much and would like this chance to revisit Newcastle again but in OpenStreetMap.
